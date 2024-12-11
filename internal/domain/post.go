@@ -7,12 +7,13 @@ import (
 )
 
 type Post struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Content   string    `json:"content"`
-	ImageURL  string    `json:"image_url,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uuid.UUID  `json:"id" gorm:"type:uuid;primary_key"`
+	UserID    uuid.UUID  `json:"user_id" gorm:"type:uuid"`
+	Content   string     `json:"content"`
+	Media     []string   `json:"media" gorm:"type:text[]"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 
 type PostRepository interface {

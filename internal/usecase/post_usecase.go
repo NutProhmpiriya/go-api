@@ -64,7 +64,7 @@ func (u *postUseCase) UpdatePost(post *domain.Post) error {
 
 	// Update allowed fields
 	existingPost.Content = post.Content
-	existingPost.ImageURL = post.ImageURL
+	existingPost.Media = post.Media
 
 	return u.postRepo.Update(existingPost)
 }

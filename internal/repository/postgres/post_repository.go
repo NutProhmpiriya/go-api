@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"socialnetwork/internal/domain"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -22,7 +23,7 @@ func (r *postRepository) GetByID(id string) (*domain.Post, error) {
 		return nil, err
 	}
 	
-	if err := r.db.Where("id = ?", uid).First(&post).Error; err != nil {
+	if err := r.db.Where("id = ? AND deleted_at IS NULL", uid).First(&post).Error; err != nil {
 		return nil, err
 	}
 	return &post, nil
@@ -35,7 +36,7 @@ func (r *postRepository) GetByUserID(userID string) ([]*domain.Post, error) {
 		return nil, err
 	}
 	
-	if err := r.db.Where("user_id = ?", uid).Order("created_at DESC").Find(&posts).Error; err != nil {
+	if err := r.db.Where("user_id = ? AND deleted_at IS NULL", uid).Order("created_at DESC").Find(&posts).Error; err != nil {
 		return nil, err
 	}
 	return posts, nil
@@ -43,11 +44,19 @@ func (r *postRepository) GetByUserID(userID string) ([]*domain.Post, error) {
 
 func (r *postRepository) Create(post *domain.Post) error {
 	post.ID = uuid.New()
+	post.CreatedAt = time.Now()
+	post.UpdatedAt = time.Now()
 	return r.db.Create(post).Error
 }
 
 func (r *postRepository) Update(post *domain.Post) error {
-	return r.db.Save(post).Error
+	post.UpdatedAt = time.Now()
+	return r.db.Model(post).Where("id = ? AND deleted_at IS NULL", post.ID).
+		Updates(map[string]interface{}{
+			"content":    post.Content,
+			"media":      post.Media,
+			"updated_at": post.UpdatedAt,
+		}).Error
 }
 
 func (r *postRepository) Delete(id string) error {
@@ -55,26 +64,22 @@ func (r *postRepository) Delete(id string) error {
 	if err != nil {
 		return err
 	}
-	return r.db.Delete(&domain.Post{}, "id = ?", uid).Error
+	return r.db.Model(&domain.Post{}).
+		Where("id = ? AND deleted_at IS NULL", uid).
+		Update("deleted_at", time.Now()).Error
 }
 
 func (r *postRepository) GetFeed(userID string, page, limit int) ([]*domain.Post, error) {
 	var posts []*domain.Post
 	offset := (page - 1) * limit
 
-	uid, err := uuid.Parse(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = r.db.Where("user_id = ?", uid).
+	if err := r.db.Where("deleted_at IS NULL").
 		Order("created_at DESC").
-		Limit(limit).
 		Offset(offset).
-		Find(&posts).Error
-
-	if err != nil {
+		Limit(limit).
+		Find(&posts).Error; err != nil {
 		return nil, err
 	}
+
 	return posts, nil
 }

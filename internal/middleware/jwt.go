@@ -49,38 +49,40 @@ func ValidateToken(tokenString string, secretKey string) (*Claims, error) {
 	return nil, ErrInvalidToken
 }
 
-func AuthMiddleware(secretKey string) gin.HandlerFunc {
+func JWTMiddleware(secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "no authorization header"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
 			c.Abort()
 			return
 		}
 
-		bearerToken := strings.Split(authHeader, " ")
-		if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token format"})
+		// Bearer token format: "Bearer <token>"
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
 			c.Abort()
 			return
 		}
 
-		claims, err := ValidateToken(bearerToken[1], secretKey)
+		claims, err := ValidateToken(parts[1], secretKey)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
 
-		c.Set("userID", claims.UserID)
+		// Set user ID in context
+		c.Set("user_id", claims.UserID)
 		c.Next()
 	}
 }
 
 func GetUserFromContext(c *gin.Context) (string, error) {
-	userID, exists := c.Get("userID")
+	userID, exists := c.Get("user_id")
 	if !exists {
-		return "", ErrNoToken
+		return "", errors.New("user not found in context")
 	}
 	return userID.(string), nil
 }

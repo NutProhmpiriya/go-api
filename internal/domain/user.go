@@ -7,15 +7,16 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
-	FullName  string    `json:"full_name"`
-	Bio       string    `json:"bio"`
-	Avatar    string    `json:"avatar"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uuid.UUID  `json:"id" gorm:"type:uuid;primary_key"`
+	Username  string     `json:"username" gorm:"uniqueIndex"`
+	Email     string     `json:"email" gorm:"uniqueIndex"`
+	Password  string     `json:"password"`
+	FullName  string     `json:"full_name"`
+	Bio       string     `json:"bio"`
+	Avatar    string     `json:"avatar"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" gorm:"index"`
 }
 
 type UserPatchRequest struct {

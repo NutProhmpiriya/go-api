@@ -60,13 +60,18 @@ func main() {
 	userRepo := postgres.NewUserRepository(db)
 	postRepo := postgres.NewPostRepository(db)
 
+	// JWT secret key
+	secretKey := "your-secret-key"
+
 	// Initialize use cases
+	authUseCase := usecase.NewAuthUseCase(userRepo, secretKey)
 	userUseCase := usecase.NewUserUseCase(userRepo)
 	postUseCase := usecase.NewPostUseCase(postRepo, userRepo)
 
 	// Initialize HTTP handlers
+	authHandler := handler.NewAuthHandler(authUseCase)
 	userHandler := handler.NewUserHandler(userUseCase)
-	postHandler := handler.NewPostHandler(postUseCase)
+	postHandler := handler.NewPostHandler(postUseCase, secretKey)
 
 	// Initialize Gin router
 	router := gin.Default()
@@ -81,6 +86,7 @@ func main() {
 	// API routes
 	api := router.Group("/api")
 	{
+		authHandler.Register(api)
 		userHandler.Register(api)
 		postHandler.Register(api)
 	}
@@ -100,6 +106,7 @@ func main() {
 	go func() {
 		<-sig
 
+		// Shutdown signal with grace period of 30 seconds
 		shutdownCtx, _ := context.WithTimeout(serverCtx, 30*time.Second)
 
 		go func() {

@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"socialnetwork/internal/domain"
+	"socialnetwork/internal/middleware"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,16 +12,19 @@ import (
 
 type PostHandler struct {
 	postUseCase domain.PostUseCase
+	secretKey   string
 }
 
-func NewPostHandler(postUseCase domain.PostUseCase) *PostHandler {
+func NewPostHandler(postUseCase domain.PostUseCase, secretKey string) *PostHandler {
 	return &PostHandler{
 		postUseCase: postUseCase,
+		secretKey:   secretKey,
 	}
 }
 
 func (h *PostHandler) Register(router *gin.RouterGroup) {
 	posts := router.Group("/posts")
+	posts.Use(middleware.JWTMiddleware(h.secretKey))
 	{
 		posts.POST("/", h.CreatePost)
 		posts.GET("/:id", h.GetPost)
