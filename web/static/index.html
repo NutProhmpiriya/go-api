@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Network</title>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div x-data="app()" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="bg-white shadow rounded-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Social Network</h1>
+        </header>
+
+        <!-- Create Post Form -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Create Post</h2>
+            <div class="space-y-4">
+                <textarea 
+                    x-model="newPost.content"
+                    class="w-full p-2 border rounded-lg"
+                    placeholder="What's on your mind?"
+                    rows="3"
+                ></textarea>
+                <button 
+                    @click="createPost"
+                    class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                >
+                    Post
+                </button>
+            </div>
+        </div>
+
+        <!-- Feed -->
+        <div class="space-y-6">
+            <template x-for="post in posts" :key="post.id">
+                <div class="bg-white shadow rounded-lg p-6">
+                    <div class="flex items-center mb-4">
+                        <img 
+                            :src="post.user_avatar || 'https://via.placeholder.com/40'"
+                            class="w-10 h-10 rounded-full mr-4"
+                        >
+                        <div>
+                            <h3 class="font-semibold" x-text="post.user_name || 'Anonymous'"></h3>
+                            <p class="text-sm text-gray-500" x-text="formatDate(post.created_at)"></p>
+                        </div>
+                    </div>
+                    <p class="text-gray-800" x-text="post.content"></p>
+                    <div class="mt-4 flex items-center space-x-4">
+                        <button 
+                            @click="likePost(post)"
+                            class="text-gray-500 hover:text-blue-500"
+                        >
+                            Like (<span x-text="post.likes"></span>)
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        function app() {
+            return {
+                posts: [],
+                newPost: {
+                    content: ''
+                },
+                async init() {
+                    await this.fetchPosts();
+                },
+                async fetchPosts() {
+                    try {
+                        const response = await fetch('/api/posts/feed?page=1&limit=10');
+                        const data = await response.json();
+                        this.posts = data;
+                    } catch (error) {
+                        console.error('Error fetching posts:', error);
+                    }
+                },
+                async createPost() {
+                    try {
+                        const response = await fetch('/api/posts', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(this.newPost),
+                        });
+                        if (response.ok) {
+                            this.newPost.content = '';
+                            await this.fetchPosts();
+                        }
+                    } catch (error) {
+                        console.error('Error creating post:', error);
+                    }
+                },
+                async likePost(post) {
+                    // Implement like functionality
+                    post.likes = (post.likes || 0) + 1;
+                },
+                formatDate(date) {
+                    return new Date(date).toLocaleDateString();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
