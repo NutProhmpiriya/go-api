@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"socialnetwork/internal/domain"
 	"socialnetwork/internal/middleware"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -31,6 +32,7 @@ func (h *PostHandler) Register(router *gin.RouterGroup) {
 		posts.PUT("/:id", h.UpdatePost)
 		posts.DELETE("/:id", h.DeletePost)
 		posts.GET("/user/:id", h.GetUserPosts)
+		posts.GET("/feed", h.GetFeed)
 	}
 }
 
@@ -201,6 +203,44 @@ func (h *PostHandler) GetUserPosts(c *gin.Context) {
 	posts, err := h.postUseCase.GetUserPosts(userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, posts)
+}
+
+// @Summary Get post feed
+// @Description Get paginated feed of posts
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer <token>"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Posts per page (default: 10)"
+// @Success 200 {array} domain.Post
+// @Failure 401 {object} map[string]string
+// @Router /posts/feed [get]
+// @Security Bearer
+func (h *PostHandler) GetFeed(c *gin.Context) {
+	// Get pagination parameters
+	page := 1
+	limit := 10
+	
+	if pageStr := c.Query("page"); pageStr != "" {
+		if parsedPage, err := strconv.Atoi(pageStr); err == nil && parsedPage > 0 {
+			page = parsedPage
+		}
+	}
+	
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	posts, err := h.postUseCase.GetFeed(page, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

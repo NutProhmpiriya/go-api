@@ -75,3 +75,13 @@ func (u *postUseCase) DeletePost(id string) error {
 	}
 	return u.postRepo.Delete(id)
 }
+
+func (u *postUseCase) GetFeed(page int, limit int) ([]*domain.Post, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	return u.postRepo.GetFeed(page, limit)
+}

@@ -69,7 +69,7 @@ func (r *postRepository) Delete(id string) error {
 		Update("deleted_at", time.Now()).Error
 }
 
-func (r *postRepository) GetFeed(userID string, page, limit int) ([]*domain.Post, error) {
+func (r *postRepository) GetFeed(page, limit int) ([]*domain.Post, error) {
 	var posts []*domain.Post
 	offset := (page - 1) * limit
 

@@ -11,71 +11,147 @@
     <div x-data="app()" class="container mx-auto px-4 py-8">
         <!-- Header -->
         <header class="bg-white shadow rounded-lg p-6 mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Social Network</h1>
-        </header>
-
-        <!-- Create Post Form -->
-        <div class="bg-white shadow rounded-lg p-6 mb-8">
-            <h2 class="text-xl font-semibold mb-4">Create Post</h2>
-            <div class="space-y-4">
-                <textarea 
-                    x-model="newPost.content"
-                    class="w-full p-2 border rounded-lg"
-                    placeholder="What's on your mind?"
-                    rows="3"
-                ></textarea>
-                <button 
-                    @click="createPost"
-                    class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                >
-                    Post
-                </button>
-            </div>
-        </div>
-
-        <!-- Feed -->
-        <div class="space-y-6">
-            <template x-for="post in posts" :key="post.id">
-                <div class="bg-white shadow rounded-lg p-6">
-                    <div class="flex items-center mb-4">
-                        <img 
-                            :src="post.user_avatar || 'https://via.placeholder.com/40'"
-                            class="w-10 h-10 rounded-full mr-4"
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold text-gray-900">Social Network</h1>
+                <template x-if="!token">
+                    <div class="space-x-4">
+                        <input 
+                            type="email" 
+                            x-model="loginForm.email" 
+                            placeholder="Email"
+                            class="border rounded px-3 py-1"
                         >
-                        <div>
-                            <h3 class="font-semibold" x-text="post.user_name || 'Anonymous'"></h3>
-                            <p class="text-sm text-gray-500" x-text="formatDate(post.created_at)"></p>
-                        </div>
-                    </div>
-                    <p class="text-gray-800" x-text="post.content"></p>
-                    <div class="mt-4 flex items-center space-x-4">
+                        <input 
+                            type="password" 
+                            x-model="loginForm.password" 
+                            placeholder="Password"
+                            class="border rounded px-3 py-1"
+                        >
                         <button 
-                            @click="likePost(post)"
-                            class="text-gray-500 hover:text-blue-500"
+                            @click="login"
+                            class="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
                         >
-                            Like (<span x-text="post.likes"></span>)
+                            Login
                         </button>
                     </div>
+                </template>
+                <template x-if="token">
+                    <button 
+                        @click="logout"
+                        class="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+                    >
+                        Logout
+                    </button>
+                </template>
+            </div>
+        </header>
+
+        <template x-if="token">
+            <!-- Create Post Form -->
+            <div class="bg-white shadow rounded-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Create Post</h2>
+                <div class="space-y-4">
+                    <textarea 
+                        x-model="newPost.content"
+                        class="w-full p-2 border rounded-lg"
+                        placeholder="What's on your mind?"
+                        rows="3"
+                    ></textarea>
+                    <button 
+                        @click="createPost"
+                        class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                    >
+                        Post
+                    </button>
                 </div>
-            </template>
-        </div>
+            </div>
+
+            <!-- Feed -->
+            <div class="space-y-6">
+                <template x-for="post in posts" :key="post.id">
+                    <div class="bg-white shadow rounded-lg p-6">
+                        <div class="flex items-center mb-4">
+                            <img 
+                                :src="post.user_avatar || 'https://via.placeholder.com/40'"
+                                class="w-10 h-10 rounded-full mr-4"
+                            >
+                            <div>
+                                <h3 class="font-semibold" x-text="post.user_name || 'Anonymous'"></h3>
+                                <p class="text-sm text-gray-500" x-text="formatDate(post.created_at)"></p>
+                            </div>
+                        </div>
+                        <p class="text-gray-800" x-text="post.content"></p>
+                        <div class="mt-4 flex items-center space-x-4">
+                            <button 
+                                @click="likePost(post)"
+                                class="text-gray-500 hover:text-blue-500"
+                            >
+                                Like (<span x-text="post.likes || 0"></span>)
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
     </div>
 
     <script>
         function app() {
             return {
                 posts: [],
+                token: localStorage.getItem('token'),
+                loginForm: {
+                    email: '',
+                    password: ''
+                },
                 newPost: {
                     content: ''
                 },
                 async init() {
-                    await this.fetchPosts();
+                    if (this.token) {
+                        await this.fetchPosts();
+                    }
+                },
+                async login() {
+                    try {
+                        const response = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(this.loginForm),
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.token = data.token;
+                            localStorage.setItem('token', data.token);
+                            await this.fetchPosts();
+                        } else {
+                            alert('Login failed. Please check your credentials.');
+                        }
+                    } catch (error) {
+                        console.error('Error logging in:', error);
+                        alert('Login failed. Please try again.');
+                    }
+                },
+                logout() {
+                    this.token = null;
+                    localStorage.removeItem('token');
+                    this.posts = [];
                 },
                 async fetchPosts() {
                     try {
-                        const response = await fetch('/api/posts/feed?page=1&limit=10');
-                        const data = await response.json();
-                        this.posts = data;
+                        const response = await fetch('/api/posts/feed?page=1&limit=10', {
+                            headers: {
+                                'Authorization': `Bearer ${this.token}`
+                            }
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.posts = data;
+                        } else if (response.status === 401) {
+                            this.logout();
+                        }
                     } catch (error) {
                         console.error('Error fetching posts:', error);
                     }
@@ -86,23 +162,26 @@
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.token}`
                             },
                             body: JSON.stringify(this.newPost),
                         });
                         if (response.ok) {
                             this.newPost.content = '';
                             await this.fetchPosts();
+                        } else if (response.status === 401) {
+                            this.logout();
                         }
                     } catch (error) {
                         console.error('Error creating post:', error);
                     }
                 },
                 async likePost(post) {
-                    // Implement like functionality
-                    post.likes = (post.likes || 0) + 1;
+                    // Like functionality will be implemented later
+                    console.log('Like post:', post.id);
                 },
                 formatDate(date) {
-                    return new Date(date).toLocaleDateString();
+                    return new Date(date).toLocaleString();
                 }
             }
         }

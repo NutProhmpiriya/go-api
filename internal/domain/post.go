@@ -22,6 +22,7 @@ type PostRepository interface {
 	Create(post *Post) error
 	Update(post *Post) error
 	Delete(id string) error
+	GetFeed(page int, limit int) ([]*Post, error)
 }
 
 type PostUseCase interface {
@@ -30,4 +31,5 @@ type PostUseCase interface {
 	CreatePost(post *Post) error
 	UpdatePost(post *Post) error
 	DeletePost(id string) error
+	GetFeed(page int, limit int) ([]*Post, error)
 }
