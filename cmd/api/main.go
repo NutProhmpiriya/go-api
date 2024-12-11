@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"socialnetwork/docs"
 	"socialnetwork/internal/delivery/http/handler"
 	"socialnetwork/internal/repository/postgres"
 	"socialnetwork/internal/usecase"
@@ -15,9 +16,33 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title           Social Network API
+// @version         1.0
+// @description     A Social Network API with authentication and post management.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api
+
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
+	// Swagger initialization
+	docs.SwaggerInfo.BasePath = "/api"
+
 	// Initialize database connection
 	db, err := database.NewPostgresConnection(&database.PostgresConfig{
 		Host:     "localhost",
@@ -45,6 +70,9 @@ func main() {
 
 	// Initialize Gin router
 	router := gin.Default()
+
+	// Swagger documentation
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Serve static files
 	router.Static("/static", "./web/static")

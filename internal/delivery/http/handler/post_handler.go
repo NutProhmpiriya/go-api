@@ -30,6 +30,18 @@ func (h *PostHandler) Register(router *gin.RouterGroup) {
 	}
 }
 
+// @Summary Create new post
+// @Description Create a new post with the provided content
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer <token>"
+// @Param post body domain.Post true "Post content"
+// @Success 201 {object} domain.Post
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /posts [post]
+// @Security Bearer
 func (h *PostHandler) CreatePost(c *gin.Context) {
 	var post domain.Post
 	if err := c.ShouldBindJSON(&post); err != nil {
@@ -65,6 +77,18 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, post)
 }
 
+// @Summary Get post by ID
+// @Description Get post details by post ID
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer <token>"
+// @Param id path string true "Post ID"
+// @Success 200 {object} domain.Post
+// @Failure 404 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /posts/{id} [get]
+// @Security Bearer
 func (h *PostHandler) GetPost(c *gin.Context) {
 	id := c.Param("id")
 
@@ -77,18 +101,20 @@ func (h *PostHandler) GetPost(c *gin.Context) {
 	c.JSON(http.StatusOK, post)
 }
 
-func (h *PostHandler) GetUserPosts(c *gin.Context) {
-	userID := c.Param("id")
-
-	posts, err := h.postUseCase.GetUserPosts(userID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, posts)
-}
-
+// @Summary Update post
+// @Description Update an existing post
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer <token>"
+// @Param id path string true "Post ID"
+// @Param post body domain.Post true "Updated post content"
+// @Success 200 {object} domain.Post
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /posts/{id} [put]
+// @Security Bearer
 func (h *PostHandler) UpdatePost(c *gin.Context) {
 	id := c.Param("id")
 
@@ -130,6 +156,18 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 	c.JSON(http.StatusOK, post)
 }
 
+// @Summary Delete post
+// @Description Delete an existing post
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer <token>"
+// @Param id path string true "Post ID"
+// @Success 204 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /posts/{id} [delete]
+// @Security Bearer
 func (h *PostHandler) DeletePost(c *gin.Context) {
 	id := c.Param("id")
 
@@ -139,4 +177,28 @@ func (h *PostHandler) DeletePost(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary Get user posts
+// @Description Get all posts by user ID
+// @Tags posts
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer <token>"
+// @Param id path string true "User ID"
+// @Success 200 {array} domain.Post
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /posts/user/{id} [get]
+// @Security Bearer
+func (h *PostHandler) GetUserPosts(c *gin.Context) {
+	userID := c.Param("id")
+
+	posts, err := h.postUseCase.GetUserPosts(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, posts)
 }
